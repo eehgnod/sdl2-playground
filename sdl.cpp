@@ -53,19 +53,21 @@ int main()
             }
             if (event.type == SDL_KEYDOWN)
             {
-                switch (event.key.keysym.sym)
+                switch (event.key.keysym.scancode)
                 {
-                case SDLK_r:
+                case SDL_SCANCODE_R:
                     current = Color::Red;
                     std::cout << "Red\n";
                     break;
-                case SDLK_g:
+                case SDL_SCANCODE_G:
                     current = Color::Green;
                     std::cout << "Green\n";
                     break;
-                case SDLK_b:
+                case SDL_SCANCODE_B:
                     current = Color::Blue;
                     std::cout << "Blue\n";
+                    break;
+                default:
                     break;
                 }
             }
@@ -84,6 +86,7 @@ int main()
             break;
         case Color::Black:
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            break;
         }
 
         SDL_RenderClear(renderer);
