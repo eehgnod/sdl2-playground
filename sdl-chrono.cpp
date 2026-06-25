@@ -15,7 +15,11 @@ int main()
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
     Vec2 pos{400.0f, 300.0f};
+    Vec2 prevPos{400.0f, 300.0f};
     const float speed = 200.0f;
+
+    const float fixedDt = 1.0f / 60.0f;
+    float accumulator = 0.0f;
 
     bool running = true;
     bool heavyLoad = false;
@@ -25,8 +29,11 @@ int main()
     while (running)
     {
         auto currentTime = std::chrono::high_resolution_clock::now();
-        float dt = std::chrono::duration<float>(currentTime - prevTime).count();
+        float frameDt = std::chrono::duration<float>(currentTime - prevTime).count();
         prevTime = currentTime;
+
+        if (frameDt > 0.25f)
+            frameDt = 0.25f;
 
         while (SDL_PollEvent(&event))
         {
@@ -35,8 +42,7 @@ int main()
             if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_SPACE)
             {
                 heavyLoad = !heavyLoad;
-                std::cout << "CPU load: " << (heavyLoad ? "ON" : "OFF")
-                          << " dt: " << dt << "\n";
+                std::cout << "CPU load: " << (heavyLoad ? "ON" : "OFF") << "\n";
             }
         }
 
@@ -46,33 +52,47 @@ int main()
         }
 
         const Uint8 *keys = SDL_GetKeyboardState(nullptr);
-        if (keys[SDL_SCANCODE_W])
-            pos.y -= speed * dt;
-        if (keys[SDL_SCANCODE_S])
-            pos.y += speed * dt;
-        if (keys[SDL_SCANCODE_A])
-            pos.x -= speed * dt;
-        if (keys[SDL_SCANCODE_D])
-            pos.x += speed * dt;
 
-        if (pos.x < 0)
-            pos.x = 0;
-        if (pos.x > 750)
-            pos.x = 750;
-        if (pos.y < 0)
-            pos.y = 0;
-        if (pos.y > 550)
-            pos.y = 550;
+        accumulator += frameDt;
+
+        while (accumulator >= fixedDt)
+        {
+            prevPos = pos;
+
+            if (keys[SDL_SCANCODE_W])
+                pos.y -= speed * fixedDt;
+            if (keys[SDL_SCANCODE_S])
+                pos.y += speed * fixedDt;
+            if (keys[SDL_SCANCODE_A])
+                pos.x -= speed * fixedDt;
+            if (keys[SDL_SCANCODE_D])
+                pos.x += speed * fixedDt;
+
+            if (pos.x < 0)
+                pos.x = 0;
+            if (pos.x > 750)
+                pos.x = 750;
+            if (pos.y < 0)
+                pos.y = 0;
+            if (pos.y > 550)
+                pos.y = 550;
+
+            accumulator -= fixedDt;
+        }
+
+        float alpha = accumulator / fixedDt;
+        float renderX = prevPos.x + (pos.x - prevPos.x) * alpha;
+        float renderY = prevPos.y + (pos.y - prevPos.y) * alpha;
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        SDL_Rect rect{static_cast<int>(pos.x), static_cast<int>(pos.y), 50, 50};
+        SDL_Rect rect{static_cast<int>(renderX), static_cast<int>(renderY), 50, 50};
         SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
         SDL_RenderFillRect(renderer, &rect);
 
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        int barWidth = static_cast<int>(dt * 3000);
+        int barWidth = static_cast<int>(frameDt * 3000);
         if (barWidth > 800)
             barWidth = 800;
         SDL_Rect dtBar{0, 0, barWidth, 10};
