@@ -1,6 +1,14 @@
 #include <SDL.h>
 #include <iostream>
 
+enum class Color
+{
+    Red,
+    Green,
+    Blue,
+    Black
+};
+
 int main()
 {
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
@@ -33,6 +41,8 @@ int main()
 
     bool running = true;
     SDL_Event event;
+    Color current = Color::Black;
+
     while (running)
     {
         while (SDL_PollEvent(&event))
@@ -41,9 +51,41 @@ int main()
             {
                 running = false;
             }
+            if (event.type == SDL_KEYDOWN)
+            {
+                switch (event.key.keysym.sym)
+                {
+                case SDLK_r:
+                    current = Color::Red;
+                    std::cout << "Red\n";
+                    break;
+                case SDLK_g:
+                    current = Color::Green;
+                    std::cout << "Green\n";
+                    break;
+                case SDLK_b:
+                    current = Color::Blue;
+                    std::cout << "Blue\n";
+                    break;
+                }
+            }
         }
 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        switch (current)
+        {
+        case Color::Red:
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+            break;
+        case Color::Green:
+            SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+            break;
+        case Color::Blue:
+            SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+            break;
+        case Color::Black:
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        }
+
         SDL_RenderClear(renderer);
         SDL_RenderPresent(renderer);
     }
